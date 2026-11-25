@@ -1,7 +1,9 @@
 #if os(iOS)
 import ActivityKit
 import BackgroundTasks
+import CryptoKit
 import Foundation
+import UIKit
 import WageDripCore
 
 /// Starts, updates and ends the Live Activity.
@@ -34,6 +36,8 @@ final class LiveActivityController {
 
     private typealias WageActivity = Activity<WageActivityAttributes>
 
+    private var lastRefresh: Date?
+
     var isRunning: Bool {
         WageActivity.activities.contains { $0.activityState == .active || $0.activityState == .stale }
     }
@@ -45,6 +49,9 @@ final class LiveActivityController {
 
     /// Brings everything up to date. Safe from the background: it only updates and ends.
     func refresh() async {
+        // Several triggers can fire together (leaving the foreground, a settings change).
+        if let last = lastRefresh, Date().timeIntervalSince(last) < 1 { return }
+        lastRefresh = Date()
         let settings = AppGroup.loadSettings()
         let engine = AppGroup.makeEngine(settings: settings)
         let now = Date()
@@ -98,14 +105,42 @@ final class LiveActivityController {
         }
     }
 
-    /// Replaces all scheduled starts with fresh ones for the next few workdays.
+    private static let signatureKey = "live.scheduleSignature"
+
+    /// Makes sure the next few workdays have a scheduled start.
+    ///
+    /// Scheduling only works in the foreground, and replacing a schedule means cancelling the old
+    /// one first, so this does nothing unless the app is active and the schedule is actually out of
+    /// date. Otherwise a late call while the app is leaving the foreground would wipe the schedule
+    /// and fail to recreate it.
     private func scheduleUpcoming(settings: Settings, engine: EarningsEngine, from now: Date) async {
-        await Self.endAll(in: [.pending])
+        guard UIApplication.shared.applicationState == .active else { return }
+
+        var starts: [Date] = []
         var cursor = now
-        var scheduled = 0
         for _ in 0..<Self.scheduleAhead {
             guard let start = engine.nextWorkStart(after: cursor, calendar: .current) else { break }
+            starts.append(start)
             cursor = start
+        }
+        let days = starts.map { DayKey($0, calendar: .current) }
+
+        // The scheduled content depends on the settings, so they are part of the signature.
+        var hasher = SHA256()
+        hasher.update(data: settings.encoded() ?? Data())
+        hasher.update(data: Data(days.map(\.string).joined(separator: ",").utf8))
+        let signature = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        if AppGroup.defaults.string(forKey: Self.signatureKey) == signature, Self.pendingDays() == Set(days) {
+            return
+        }
+
+        await Self.endAll(in: [.pending])
+        guard UIApplication.shared.applicationState == .active else {
+            AppGroup.defaults.removeObject(forKey: Self.signatureKey)
+            return
+        }
+        var scheduled = 0
+        for start in starts {
             do {
                 _ = try WageActivity.request(
                     attributes: .init(day: DayKey(start, calendar: .current)),
@@ -119,7 +154,16 @@ final class LiveActivityController {
                 break
             }
         }
-        Diagnostics.record("live scheduled \(scheduled)")
+        if scheduled == starts.count {
+            AppGroup.defaults.set(signature, forKey: Self.signatureKey)
+        } else {
+            AppGroup.defaults.removeObject(forKey: Self.signatureKey)
+        }
+        Diagnostics.record("live scheduled \(scheduled)/\(starts.count)")
+    }
+
+    nonisolated private static func pendingDays() -> Set<DayKey> {
+        Set(WageActivity.activities.filter { $0.activityState == .pending }.map(\.attributes.day))
     }
 
     func end() async {
@@ -136,6 +180,7 @@ final class LiveActivityController {
                 await self.scheduleUpcoming(settings: settings, engine: AppGroup.makeEngine(settings: settings), from: Date())
             } else {
                 await Self.endAll(in: [.pending])
+                AppGroup.defaults.removeObject(forKey: Self.signatureKey)
             }
         }
     }
