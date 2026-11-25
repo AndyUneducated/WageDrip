@@ -1,0 +1,90 @@
+name: WageDrip
+options:
+  bundleIdPrefix: com.andyuneducated
+  deploymentTarget:
+    iOS: "27.0"
+    macOS: "27.0"
+  createIntermediateGroups: true
+  developmentLanguage: zh-Hans
+packages:
+  WageDripCore:
+    path: Packages/WageDripCore
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+targets:
+  WageDrip:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - WageDrip
+      - Shared
+    dependencies:
+      - package: WageDripCore
+      - target: WageDripWidgets
+    info:
+      path: WageDrip/Info.plist
+      properties:
+        CFBundleDisplayName: 窝囊费
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: true
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.andyuneducated.wagedrip.refresh
+        UIBackgroundModes:
+          - fetch
+          - processing
+        LSApplicationCategoryType: public.app-category.finance
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.andyuneducated.wagedrip
+        PRODUCT_NAME: WageDrip
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_ENTITLEMENTS: WageDrip/WageDrip.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": WageDrip/WageDrip-macOS.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+  WageDripWidgets:
+    type: app-extension
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - WageDripWidgets
+      - Shared
+    dependencies:
+      - package: WageDripCore
+    info:
+      path: WageDripWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: 窝囊费
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.andyuneducated.wagedrip.widgets
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: WageDripWidgets/WageDripWidgets.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": WageDripWidgets/WageDripWidgets-macOS.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
+schemes:
+  WageDrip:
+    build:
+      targets:
+        WageDrip: all
+        WageDripWidgets: all
+    run:
+      config: Debug
