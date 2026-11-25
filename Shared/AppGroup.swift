@@ -1,6 +1,10 @@
 import Foundation
 import WageDripCore
 
+/// SwiftUI on macOS also has a `Settings` type (the settings scene). Inside this app, `Settings`
+/// always means the user's settings model.
+typealias Settings = WageDripCore.Settings
+
 /// State shared between the app and its widget extension through the App Group container.
 enum AppGroup {
     static let id = "group.com.andyuneducated.wagedrip"
