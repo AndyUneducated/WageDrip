@@ -128,10 +128,15 @@ final class LiveActivityController {
         }
         let days = starts.map { DayKey($0, calendar: .current) }
 
-        // The scheduled content depends on the settings, so they are part of the signature.
+        // Sign what would actually be scheduled: each day and the text it would show. (Hashing the
+        // encoded settings does not work: sets and dictionaries encode in a different order each
+        // time, so the signature never matched and the schedule was rebuilt on every call.)
+        let contents = starts.map { content(at: $0, settings: settings, engine: engine) }
         var hasher = SHA256()
-        hasher.update(data: settings.encoded() ?? Data())
-        hasher.update(data: Data(days.map(\.string).joined(separator: ",").utf8))
+        for (day, content) in zip(days, contents) {
+            let parts = [day.string, content.state.compactText] + content.state.lines.map { "\($0.period.rawValue)=\($0.text)" }
+            hasher.update(data: Data(parts.joined(separator: "|").utf8))
+        }
         let signature = hasher.finalize().map { String(format: "%02x", $0) }.joined()
         if AppGroup.defaults.string(forKey: Self.signatureKey) == signature, Self.pendingDays() == Set(days) {
             return
@@ -143,11 +148,11 @@ final class LiveActivityController {
             return
         }
         var scheduled = 0
-        for start in starts {
+        for (start, content) in zip(starts, contents) {
             do {
                 _ = try WageActivity.request(
                     attributes: .init(day: DayKey(start, calendar: .current)),
-                    content: content(at: start, settings: settings, engine: engine),
+                    content: content,
                     pushType: nil, style: .standard,
                     alertConfiguration: AlertConfiguration(title: "窝囊费", body: "开始计费", sound: .default),
                     start: start)

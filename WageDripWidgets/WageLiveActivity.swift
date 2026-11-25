@@ -30,6 +30,10 @@ struct WageLiveActivity: Widget {
                 Image(systemName: "drop.fill")
             }
         }
+        // Experiment: declare no supplemental families, hoping the system then leaves the Live
+        // Activity off Apple Watch (there is no watch app, so it shows there without an icon and
+        // cannot be opened). Apple documents no opt-out and does not say what an empty list does.
+        .supplementalActivityFamilies([])
     }
 }
 
