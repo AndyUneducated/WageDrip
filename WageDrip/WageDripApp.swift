@@ -3,7 +3,22 @@ import WageDripCore
 
 @main
 struct WageDripApp: App {
-    @State private var store = SettingsStore()
+    @State private var store: SettingsStore
+    #if os(macOS)
+    @State private var ticker: MenuBarTicker
+    #endif
+
+    init() {
+        let store = SettingsStore()
+        _store = State(initialValue: store)
+        #if os(macOS)
+        // Started here rather than from a view: the menu bar item must tick even when no
+        // window has been opened.
+        let ticker = MenuBarTicker()
+        ticker.start(store: store)
+        _ticker = State(initialValue: ticker)
+        #endif
+    }
     @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -43,8 +58,7 @@ struct WageDripApp: App {
             MenuBarReceipt()
                 .environment(store)
         } label: {
-            MenuBarLabel()
-                .environment(store)
+            MenuBarLabel(ticker: ticker)
         }
         .menuBarExtraStyle(.window)
         #endif

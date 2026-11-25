@@ -3,15 +3,42 @@ import AppKit
 import SwiftUI
 import WageDripCore
 
-/// Menu bar title: today's amount, ticking every second.
+/// Drives the menu bar title. A menu bar label is rendered as a static snapshot, so a
+/// self-updating view inside it never refreshes; the title has to change as observed state.
+@Observable @MainActor
+final class MenuBarTicker {
+    private(set) var title = ""
+    @ObservationIgnored private var timer: Timer?
+    @ObservationIgnored private weak var store: SettingsStore?
+
+    func start(store: SettingsStore) {
+        self.store = store
+        tick()
+        guard timer == nil else { return }
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    private func tick() {
+        guard let store else { return }
+        let amount = store.converter.display(store.engine.snapshot(at: Date()).today)
+        // Two decimals: finer digits would make the title jitter and crowd the menu bar.
+        title = MoneyFormatter.string(amount, currency: store.settings.displayCurrency,
+                                      fractionDigits: min(store.settings.fractionDigits, 2))
+    }
+}
+
+/// Menu bar title: a drop and today's amount, ticking every second.
 struct MenuBarLabel: View {
-    @Environment(SettingsStore.self) private var store
+    let ticker: MenuBarTicker
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            let amount = store.converter.display(store.engine.snapshot(at: context.date).today)
-            Text(verbatim: MoneyFormatter.string(amount, currency: store.settings.displayCurrency,
-                                                 fractionDigits: store.settings.fractionDigits))
+        HStack(spacing: 4) {
+            Image(systemName: "drop.fill")
+            Text(verbatim: ticker.title)
                 .monospacedDigit()
         }
     }
