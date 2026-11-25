@@ -9,11 +9,7 @@ import WageDripCore
 struct WageLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WageActivityAttributes.self) { context in
-            LiveCard(state: context.state, isStale: context.isStale)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
-                .activityBackgroundTint(ReceiptTheme.paper)
-                .activitySystemActionForegroundColor(ReceiptTheme.ink)
+            LiveContent(state: context.state, isStale: context.isStale)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
@@ -30,10 +26,71 @@ struct WageLiveActivity: Widget {
                 Image(systemName: "drop.fill")
             }
         }
-        // Experiment: declare no supplemental families, hoping the system then leaves the Live
-        // Activity off Apple Watch (there is no watch app, so it shows there without an icon and
-        // cannot be opened). Apple documents no opt-out and does not say what an empty list does.
-        .supplementalActivityFamilies([])
+        // iPhone Live Activities always show on a paired Apple Watch; Apple offers no opt-out, and
+        // an empty list here was tested and does not hide it. So give the watch a layout of its own.
+        .supplementalActivityFamilies([.small])
+    }
+}
+
+/// Chooses the layout for where the Live Activity is being shown.
+private struct LiveContent: View {
+    @Environment(\.activityFamily) private var family
+    let state: LiveState
+    let isStale: Bool
+
+    var body: some View {
+        switch family {
+        case .small:
+            WatchCard(state: state, isStale: isStale)
+        default:
+            LiveCard(state: state, isStale: isStale)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .activityBackgroundTint(ReceiptTheme.paper)
+                .activitySystemActionForegroundColor(ReceiptTheme.ink)
+        }
+    }
+}
+
+/// Apple Watch Smart Stack (and CarPlay): a drop, today's amount, and the countdown or the
+/// time the amount was last refreshed. The watch draws its own dark background.
+private struct WatchCard: View {
+    let state: LiveState
+    let isStale: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Image(systemName: "drop.fill")
+                .font(.title3)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: state.compactText)
+                    .font(.system(.title3, design: .monospaced, weight: .medium))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                    .opacity(isStale ? 0.6 : 1)
+                if let end = state.countdownEnd, end > state.asOf {
+                    HStack(spacing: 4) {
+                        Text("距下班")
+                        Text(timerInterval: state.asOf...end, countsDown: true)
+                            .monospacedDigit()
+                    }
+                    .font(.system(.caption2, design: .monospaced))
+                    .opacity(0.7)
+                } else {
+                    HStack(spacing: 4) {
+                        Text(state.isFinal ? LocalizedStringKey("今日已结清") : LocalizedStringKey("截至"))
+                        if !state.isFinal {
+                            Text(state.asOf, style: .time)
+                        }
+                    }
+                    .font(.system(.caption2, design: .monospaced))
+                    .opacity(0.7)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 4)
     }
 }
 
