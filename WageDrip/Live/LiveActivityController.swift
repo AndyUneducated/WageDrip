@@ -89,6 +89,9 @@ final class LiveActivityController {
             Diagnostics.record("live not permitted")
             return
         }
+        // The system sometimes launches the app in the background (after an install, for a widget
+        // reload); starting is only possible, and only wanted, when the user has it open.
+        guard UIApplication.shared.applicationState == .active else { return }
         let engine = AppGroup.makeEngine(settings: settings)
         let now = Date()
         if !isRunning, engine.perSecondRate(at: now) > 0 || (manual && engine.isPaidDay(DayKey(now, calendar: .current))) {
