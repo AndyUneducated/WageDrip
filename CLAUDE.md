@@ -17,4 +17,7 @@
 ## 常用命令
 
 - 核心测试：`swift test --package-path Packages/WageDripCore`
-- 生成工程：`xcodegen generate`
+- 生成工程：`DEVELOPMENT_TEAM=<团队 ID> /opt/homebrew/bin/xcodegen generate`（团队 ID 见 Xcode › Settings › Accounts；不写进仓库）
+- 模拟器构建：`xcodebuild -project WageDrip.xcodeproj -scheme WageDrip -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath DerivedData build`
+- 本机模拟器没有 iPhone 17 Pro Max，用 iPhone 17；iPad 用 iPad Pro 13-inch (M5)
+- 真机日志可直接读取：`xcrun devicectl device copy from --domain-type appGroupDataContainer --domain-identifier group.com.andyuneducated.wagedrip ...`
