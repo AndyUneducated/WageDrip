@@ -5,6 +5,7 @@ import WageDripCore
 struct ReceiptView: View {
     @Environment(SettingsStore.self) private var store
     @State private var showSettings = false
+    @State private var liveRunning = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,23 @@ struct ReceiptView: View {
             }
             .background(ReceiptTheme.desk)
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        Task {
+                            if liveRunning {
+                                await LiveActivityController.shared.end()
+                            } else {
+                                await LiveActivityController.shared.startIfAppropriate(manual: true)
+                            }
+                            liveRunning = LiveActivityController.shared.isRunning
+                        }
+                    } label: {
+                        Label(liveRunning ? LocalizedStringKey("结束实时活动") : LocalizedStringKey("开始实时活动"),
+                              systemImage: liveRunning ? "pin.slash" : "pin")
+                    }
+                }
+                #endif
                 ToolbarItem(placement: .primaryAction) {
                     Button { showSettings = true } label: {
                         Label("设置", systemImage: "gearshape")
@@ -32,6 +50,15 @@ struct ReceiptView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView()
             }
+            #if os(iOS)
+            .task {
+                // Reflect activities started by the schedule or ended by the system.
+                while !Task.isCancelled {
+                    liveRunning = LiveActivityController.shared.isRunning
+                    try? await Task.sleep(for: .seconds(2))
+                }
+            }
+            #endif
         }
     }
 }

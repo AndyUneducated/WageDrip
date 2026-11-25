@@ -72,6 +72,8 @@ targets:
     sources:
       - WageDripWidgets
       - Shared
+      - WageDrip/Assets.xcassets
+      - WageDrip/Localizable.xcstrings
     dependencies:
       - package: WageDripCore
     info:

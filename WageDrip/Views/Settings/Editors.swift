@@ -72,10 +72,34 @@ struct EquivalentsEditor: View {
 
 struct MilestonesEditor: View {
     @Environment(SettingsStore.self) private var store
+    @State private var permissionDenied = false
 
     var body: some View {
         @Bindable var store = store
         Form {
+            Section {
+                Toggle("里程碑提醒", isOn: Binding(
+                    get: { store.settings.milestoneAlertsEnabled },
+                    set: { on in
+                        guard on else {
+                            store.settings.milestoneAlertsEnabled = false
+                            return
+                        }
+                        Task {
+                            let granted = await MilestoneNotifier.requestPermission()
+                            store.settings.milestoneAlertsEnabled = granted
+                            permissionDenied = !granted
+                        }
+                    }
+                ))
+                if permissionDenied {
+                    Text("通知权限未开启，请到系统设置里允许窝囊费发送通知。")
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                }
+            } footer: {
+                Text("赚到某个里程碑的那一刻发一条通知。时刻是提前算好的，不需要窝囊费在后台运行。")
+            }
             ForEach(Period.allCases, id: \.self) { period in
                 Section {
                     ForEach($store.settings.milestones) { $item in

@@ -87,6 +87,16 @@ struct SettingsView: View {
                     NavigationLink("里程碑") { MilestonesEditor() }
                 }
 
+                #if os(iOS)
+                Section {
+                    Toggle("上班时自动显示", isOn: $store.settings.autoStartLiveActivity)
+                } header: {
+                    Text("实时活动")
+                } footer: {
+                    Text("实时活动上的金额只在窝囊费有机会运行时刷新，大约几分钟一次，旁边的“截至”时间表示数字的新旧。要每分钟准确的金额，请用锁屏或桌面小组件。自动显示需要你偶尔打开一次窝囊费来预约之后几个工作日。非固定工时模式下，系统会在 8 小时后结束实时活动。")
+                }
+                #endif
+
                 Section {
                     LabeledContent("版本") {
                         Text(verbatim: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-")

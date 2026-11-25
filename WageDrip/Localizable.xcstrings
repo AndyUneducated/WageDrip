@@ -286,6 +286,16 @@
         }
       }
     },
+    "上班时自动显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show automatically at work"
+          }
+        }
+      }
+    },
     "上班时间": {
       "localizations": {
         "en": {
@@ -616,6 +626,16 @@
         }
       }
     },
+    "周期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period"
+          }
+        }
+      }
+    },
     "地区": {
       "localizations": {
         "en": {
@@ -642,6 +662,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done"
+          }
+        }
+      }
+    },
+    "实时活动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live Activity"
+          }
+        }
+      }
+    },
+    "实时活动上的金额只在窝囊费有机会运行时刷新，大约几分钟一次，旁边的“截至”时间表示数字的新旧。要每分钟准确的金额，请用锁屏或桌面小组件。自动显示需要你偶尔打开一次窝囊费来预约之后几个工作日。非固定工时模式下，系统会在 8 小时后结束实时活动。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Live Activity amount refreshes only when WageDrip gets to run, about every few minutes; the “As of” time shows how fresh it is. For an amount accurate to the minute, use a Lock Screen or Home Screen widget. Automatic display needs you to open WageDrip now and then so it can schedule the next few workdays. With flexible hours, the system ends the Live Activity after 8 hours."
           }
         }
       }
@@ -736,6 +776,16 @@
         }
       }
     },
+    "已赚回：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Covered: %@"
+          }
+        }
+      }
+    },
     "年度奖金": {
       "localizations": {
         "en": {
@@ -776,6 +826,16 @@
         }
       }
     },
+    "开始实时活动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Live Activity"
+          }
+        }
+      }
+    },
     "开始计费": {
       "localizations": {
         "en": {
@@ -802,6 +862,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Current rate"
+          }
+        }
+      }
+    },
+    "截至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As of"
           }
         }
       }
@@ -852,6 +922,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Manual rate"
+          }
+        }
+      }
+    },
+    "打开窝囊费": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open WageDrip"
           }
         }
       }
@@ -952,6 +1032,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Display"
+          }
+        }
+      }
+    },
+    "显示今天、本月或今年已赚到的钱。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows what you've earned today, this month or this year."
           }
         }
       }
@@ -1166,6 +1256,16 @@
         }
       }
     },
+    "结束实时活动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End Live Activity"
+          }
+        }
+      }
+    },
     "美国": {
       "localizations": {
         "en": {
@@ -1306,6 +1406,16 @@
         }
       }
     },
+    "赚到某个里程碑的那一刻发一条通知。时刻是提前算好的，不需要窝囊费在后台运行。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get a notification the moment you earn a milestone. Times are worked out in advance, so WageDrip doesn't need to run in the background."
+          }
+        }
+      }
+    },
     "距下班": {
       "localizations": {
         "en": {
@@ -1336,6 +1446,36 @@
         }
       }
     },
+    "退出": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit"
+          }
+        }
+      }
+    },
+    "选择这个小组件显示哪个周期的金额。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose which period this widget shows."
+          }
+        }
+      }
+    },
+    "通知权限未开启，请到系统设置里允许窝囊费发送通知。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off. Allow them for WageDrip in system Settings."
+          }
+        }
+      }
+    },
     "里程碑": {
       "localizations": {
         "en": {
@@ -1352,6 +1492,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Milestones are judged on the amounts shown on the receipt, so after deductions if that's what you display."
+          }
+        }
+      }
+    },
+    "里程碑提醒": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Milestone alerts"
           }
         }
       }

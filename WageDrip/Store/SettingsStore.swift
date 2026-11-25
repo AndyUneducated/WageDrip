@@ -22,12 +22,25 @@ final class SettingsStore {
             rate = rates.cachedRate(for: valid)
             AppGroup.save(valid)
             WidgetCenter.shared.reloadAllTimelines()
-            for listener in onChange { listener(valid) }
+            scheduleFollowUps()
         }
     }
 
-    /// Later features hook in here: notification rescheduling, Live Activity updates.
-    @ObservationIgnored var onChange: [(Settings) -> Void] = []
+    @ObservationIgnored private var followUp: Task<Void, Never>?
+
+    /// Things that depend on settings but are too heavy to redo on every keystroke: notification
+    /// schedules and the Live Activity. Coalesced with a short delay.
+    private func scheduleFollowUps() {
+        followUp?.cancel()
+        followUp = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled, let self else { return }
+            await MilestoneNotifier.reschedule(settings: self.stored, rate: self.rate.rate)
+            #if os(iOS)
+            await LiveActivityController.shared.settingsChanged()
+            #endif
+        }
+    }
 
     init() {
         let loaded = AppGroup.loadSettings()
@@ -49,6 +62,21 @@ final class SettingsStore {
 
     func receipt(at date: Date) -> ReceiptModel {
         ReceiptModel(at: date, settings: stored, engine: engine, converter: converter, payToDisplayRate: rate.rate)
+    }
+
+    /// Everything that should happen when the app comes to the foreground.
+    func appBecameActive() async {
+        await refreshRate()
+        if await DataRefresher.refreshHolidaysIfDue() {
+            engineCache = nil
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+        guard stored.onboardingDone else { return }
+        await MilestoneNotifier.reschedule(settings: stored, rate: rate.rate)
+        #if os(iOS)
+        await LiveActivityController.shared.refresh()
+        await LiveActivityController.shared.startIfAppropriate(manual: false)
+        #endif
     }
 
     /// Fetches the exchange rate if today's is not cached yet. Safe to call often.

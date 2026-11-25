@@ -50,3 +50,31 @@ public struct CNHolidays: HolidayProvider {
         CNHolidays(jsonFiles: bundledData())
     }
 }
+
+extension CNHolidays {
+    private static func storageKey(_ year: Int) -> String { "holidays.cn.\(year)" }
+    private static let indexKey = "holidays.cn.years"
+
+    /// Bundled data plus any newer year files downloaded earlier; downloaded files win.
+    public static func cached(storage: KeyValueStoring) -> CNHolidays {
+        let years = storage.data(forKey: indexKey).flatMap { try? JSONDecoder().decode([Int].self, from: $0) } ?? []
+        let downloaded = years.sorted().compactMap { storage.data(forKey: storageKey($0)) }
+        return CNHolidays(jsonFiles: bundledData() + downloaded)
+    }
+
+    /// Saves a downloaded year file. Rejects anything that does not parse or has no entries,
+    /// leaving existing data untouched.
+    @discardableResult
+    public static func storeDownloaded(_ data: Data, year: Int, storage: KeyValueStoring) -> Bool {
+        guard let entries = parse(data), !entries.isEmpty else { return false }
+        storage.setData(data, forKey: storageKey(year))
+        var years = storage.data(forKey: indexKey).flatMap { try? JSONDecoder().decode([Int].self, from: $0) } ?? []
+        if !years.contains(year) { years.append(year) }
+        storage.setData(try? JSONEncoder().encode(years), forKey: indexKey)
+        return true
+    }
+
+    public static func downloadURL(year: Int) -> URL {
+        URL(string: "https://raw.githubusercontent.com/NateScarlet/holiday-cn/master/\(year).json")!
+    }
+}

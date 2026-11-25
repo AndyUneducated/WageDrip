@@ -29,9 +29,16 @@ enum AppGroup {
     }
 
     static func makeEngine(settings: Settings, calendar: Calendar = .current) -> EarningsEngine {
-        let workdays = WorkdayCalendar(provider: makeHolidayProvider(settings.holidayCalendar),
+        // China's calendar may have newer year files downloaded since the app was built.
+        let provider: HolidayProvider = settings.holidayCalendar == .cn
+            ? CNHolidays.cached(storage: defaults) : makeHolidayProvider(settings.holidayCalendar)
+        let workdays = WorkdayCalendar(provider: provider,
                                        overrides: settings.dayOverrides, calendar: calendar)
         return EarningsEngine(settings: settings, workdays: workdays, calendar: calendar)
+    }
+
+    static func cachedRate(settings: Settings) -> RateResult {
+        ExchangeRateStore.cachedRate(for: settings, storage: defaults)
     }
 
     /// Uses only the cached exchange rate; never touches the network.

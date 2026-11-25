@@ -5,20 +5,48 @@ import WageDripCore
 struct WageDripApp: App {
     @State private var store = SettingsStore()
     @Environment(\.scenePhase) private var scenePhase
+    #if os(iOS)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             RootView()
                 .environment(store)
-                .task { await store.refreshRate() }
+                .task { await store.appBecameActive() }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active {
-                        Task { await store.refreshRate() }
+                    switch phase {
+                    case .active:
+                        Task { await store.appBecameActive() }
+                    case .background:
+                        #if os(iOS)
+                        LiveActivityController.shared.scheduleBackgroundRefresh()
+                        Task { await LiveActivityController.shared.refresh() }
+                        #endif
+                    default:
+                        break
                     }
                 }
         }
         #if os(macOS)
         .defaultSize(width: 460, height: 720)
+        #endif
+        #if os(iOS)
+        .backgroundTask(.appRefresh(LiveActivityController.refreshID)) {
+            await LiveActivityController.shared.refresh()
+            await LiveActivityController.shared.scheduleBackgroundRefresh()
+        }
+        #endif
+
+        #if os(macOS)
+        MenuBarExtra {
+            MenuBarReceipt()
+                .environment(store)
+        } label: {
+            MenuBarLabel()
+                .environment(store)
+        }
+        .menuBarExtraStyle(.window)
         #endif
     }
 }
@@ -34,3 +62,20 @@ private struct RootView: View {
         }
     }
 }
+
+#if os(iOS)
+import UIKit
+
+/// The system launches the app in the background when a scheduled Live Activity starts and for
+/// background refreshes. No scene exists then, so the refresh has to be kicked off from here.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        Task { @MainActor in
+            await LiveActivityController.shared.refresh()
+            LiveActivityController.shared.scheduleBackgroundRefresh()
+        }
+        return true
+    }
+}
+#endif
