@@ -42,6 +42,10 @@ struct OnboardingView: View {
                 }
             }
             .formStyle(.grouped)
+            // Keep the form a comfortable reading width on iPad and Mac.
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
+            .background(.systemGroupedBackgroundCompat)
             .navigationTitle("窝囊费")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -68,5 +72,16 @@ struct OnboardingView: View {
 
     private var region: Binding<Region> {
         Binding(get: { draft.region }, set: { draft = draft.switchingRegion(to: $0) })
+    }
+}
+
+private extension ShapeStyle where Self == Color {
+    /// The grouped-form backdrop, so the margins beside the narrowed form match it.
+    static var systemGroupedBackgroundCompat: Color {
+        #if os(iOS)
+        Color(uiColor: .systemGroupedBackground)
+        #else
+        Color(nsColor: .windowBackgroundColor)
+        #endif
     }
 }
