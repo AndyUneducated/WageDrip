@@ -1,376 +1,376 @@
-# 窝囊费 / WageDrip 设计文档
+# WageDrip Design Spec
 
-日期：2026-11-24
-状态：待审
+Date: 2026-11-24
+Status: Pending review
 
-## 1. 意图
+## 1. Intent
 
-一个"看着钱在涨"的工资计时器。用户输入薪酬和上班时间，App 在锁屏、桌面、菜单栏和 App 内持续显示今天、本月、今年已经赚到的钱。基调是自嘲而精致：名字叫"窝囊费"，界面是一张不断打印的工资小票。
+WageDrip (Chinese name: 窝囊费, roughly "the pittance you put up with") is a salary ticker that lets you watch the money go up. The owner enters their pay and working hours, and the app continuously shows how much has been earned today, this month and this year on the Lock Screen, the Home Screen, the menu bar and inside the app. The tone is self-deprecating but polished: the name is a joke at the user's own expense, and the interface is a receipt that never stops printing.
 
-当前为个人自用，未来目标是上架 App Store。
+For now it is for personal use only; the future goal is to ship on the App Store.
 
-## 2. 目标、非目标、反目标
+## 2. Goals, non-goals, anti-goals
 
-### 目标
+### Goals
 
-- iPhone 为主，iPad 与 Mac 用同一套代码覆盖。
-- 只面向当前最新系统（iOS / iPadOS / macOS 27，Xcode 27.2），不做任何向后兼容处理。
-- 锁屏常驻显示已赚金额。
-- 支持年薪、月薪、时薪三种输入方式。
-- 支持固定工时与"非固定工时"两种日内分配方式。
-- 支持货币换算、等价换算、里程碑。
-- 中文（简体）与英文。
-- 无账号、无后端，数据只存本机。
+- iPhone first, with iPad and Mac covered by the same codebase.
+- Target only the current latest systems (iOS / iPadOS / macOS 27, Xcode 27.2), with no backward-compatibility work at all.
+- Always-on display of the earned amount on the Lock Screen.
+- Support three ways of entering pay: annual salary, monthly salary, hourly wage.
+- Support two ways of distributing pay within a day: fixed hours and "flexible hours".
+- Support currency conversion, equivalents and milestones.
+- Chinese (Simplified) and English.
+- No account, no backend; data is stored on the device only.
 
-### 非目标（第一版不做）
+### Non-goals (not in the first version)
 
-- 实时股价、股票归属时间表。
-- 精确个税与社保计算。
-- 加班倍率、周末加班。
-- 摸鱼计时、隐私打码、按位置或专注模式自动启停。
-- iCloud 同步、推送服务器。
-- Apple Watch。
-- 年内调薪历史（"今年已赚"按当前薪酬回推）。
+- Live stock prices, stock vesting schedules.
+- Exact income tax and social insurance calculation.
+- Overtime multipliers, weekend overtime.
+- Slacking-off timer, privacy masking, automatic start/stop by location or Focus mode.
+- iCloud sync, push server.
+- Apple Watch.
+- In-year raise history ("earned this year" is back-calculated from the current pay).
 
-### 反目标（做成这样就算失败）
+### Anti-goals (it counts as a failure if it turns out like this)
 
-- 金额算错，或月底累计不等于月薪。
-- 锁屏显示明显过期的数字却不自知。
-- 界面像通用记账 App，失去小票的辨识度。
-- 需要用户注册或联网才能用。
+- Amounts are computed wrong, or the month-end total does not equal the monthly salary.
+- The Lock Screen shows a clearly stale number without knowing it.
+- The interface looks like a generic bookkeeping app and loses the distinctiveness of the receipt.
+- The user has to sign up or be online to use it.
 
-## 3. 约束
+## 3. Constraints
 
-### 平台限制（已调研，2026-11）
+### Platform limits (researched, 2026-11)
 
-- Apple 的 ActivityKit 与 WidgetKit 更新日志中，最新条目为 2025 年 6 月，没有让实时活动里的数字自行跳动、或预排未来内容的接口。
-- 实时活动里能由系统逐秒驱动的只有计时器文字（`Text(timerInterval:)`）和计时进度条。
-- 实时活动最长活跃 8 小时，结束后最多再在锁屏停留 4 小时。
-- 实时活动的内容更新只能来自 App 本身（前台或拿到后台运行机会时）或推送。Apple 工程师在开发者论坛明确表示 3 秒一次的推送会很快耗尽额度。
-- 小组件（WidgetKit）支持预先提交带时间戳的时间表，系统到点切换，不需要 App 运行。
-- 2025 年 6 月起，iPhone 上的实时活动会自动出现在 Mac 菜单栏；并新增了定时启动实时活动的 `request(...start:)`。
+- In Apple's ActivityKit and WidgetKit release notes, the latest entry is from June 2025; there is no API that lets a number in a Live Activity tick on its own or that pre-schedules future content.
+- The only things in a Live Activity that the system can drive second by second are timer text (`Text(timerInterval:)`) and the timer progress bar.
+- A Live Activity is active for at most 8 hours, and after it ends it stays on the Lock Screen for at most 4 more hours.
+- Content updates for a Live Activity can only come from the app itself (in the foreground or when it gets a chance to run in the background) or from push. An Apple engineer stated clearly on the developer forums that a push every 3 seconds would exhaust the budget quickly.
+- Widgets (WidgetKit) support submitting a timestamped timeline in advance; the system switches entries on time without the app running.
+- Since June 2025, Live Activities on iPhone automatically appear in the Mac menu bar; and `request(...start:)` was added for starting a Live Activity at a scheduled time.
 
-### 账号限制
+### Account limits
 
-用户没有付费 Apple 开发者账号，第一版用免费个人团队签名：
+The owner has no paid Apple Developer account, so the first version is signed with a free personal team:
 
-- 装到真机的 App 每 7 天过期，需重新安装。
-- 不能用 iCloud / CloudKit：三台设备各自保存设置，不同步。
-- 不能用推送：实时活动金额无法稳定每分钟更新。
+- An app installed on a real device expires every 7 days and has to be reinstalled.
+- iCloud / CloudKit cannot be used: each of the three devices keeps its own settings, with no sync.
+- Push cannot be used: the Live Activity amount cannot be reliably updated every minute.
 
-### 其他
+### Other
 
-- git 身份仅在本仓库内设置为 `AndyUneducated <AndyUneducated@users.noreply.github.com>`，不改全局配置。
-- 本机未安装 `gh`，GitHub 远程仓库暂不创建。
+- The git identity is set to `AndyUneducated <AndyUneducated@users.noreply.github.com>` in this repository only; the global configuration is not changed.
+- `gh` is not installed on this machine, so the GitHub remote repository is not created for now.
 
-## 4. 方案比较：锁屏常驻显示
+## 4. Options compared: always-on Lock Screen display
 
-| 方案 | 做法 | 优点 | 代价 |
+| Option | Approach | Pros | Cost |
 |---|---|---|---|
-| 甲：只做小组件 | 锁屏与桌面小组件，按分钟预排时间表 | 无服务器，永远在，无时长限制 | 没有"音乐播放器式"的大卡片和灵动岛 |
-| 乙：小组件 + 尽力而为的实时活动 | 甲的全部，加实时活动：倒计时由系统逐秒走，金额在 App 有机会运行时刷新 | 无服务器，两种形态都有 | 实时活动上的金额可能滞后 |
-| 丙：直接上推送 | 乙的全部，加推送服务让实时活动金额每分钟更新 | 实时活动金额稳定 | 需要付费账号和一个后端，与"无后端"目标冲突 |
+| A: widgets only | Lock Screen and Home Screen widgets, with a timeline pre-scheduled per minute | No server, always there, no duration limit | No "music player style" large card and no Dynamic Island |
+| B: widgets + best-effort Live Activity | Everything in A, plus a Live Activity: the countdown is advanced second by second by the system, and the amount is refreshed whenever the app gets a chance to run | No server, both forms available | The amount on the Live Activity may lag |
+| C: go straight to push | Everything in B, plus a push service so the Live Activity amount updates every minute | The Live Activity amount is reliable | Requires a paid account and a backend, which conflicts with the "no backend" goal |
 
-**选定：乙。** 丙留到上架前。用户已确认：接受每分钟更新、要倒计时（仅固定工时模式）、不要进度条。
+**Chosen: B.** C is left until before the App Store release. The owner has confirmed: per-minute updates are acceptable, a countdown is wanted (fixed hours mode only), and no progress bar.
 
-应对实时活动金额滞后的办法：实时活动上同时显示"截至 HH:mm"的时间戳；超过设定时长未更新则通过 `staleDate` 进入过期样式（金额变淡）。
+How lag in the Live Activity amount is handled: the Live Activity also shows an "as of HH:mm" timestamp; if it has not been updated for longer than a set duration, it enters the stale style via `staleDate` (the amount fades).
 
-## 5. 技术栈与工程结构
+## 5. Tech stack and project structure
 
-以下为设计者的决定，用户未逐项确认，但已认可整体方向。
+The following are the designer's decisions; the owner has not confirmed them item by item but has approved the overall direction.
 
-- **SwiftUI 多平台 App**：一个 App target 覆盖 iOS、iPadOS、macOS（原生 Mac，不是 Catalyst）。
-- **WidgetKit 扩展**：承载小组件与实时活动界面。
-- **本地 Swift 包 `WageDripCore`**：全部计算与数据模型，纯 Swift，不依赖 UI 框架，用 Swift Testing 写单元测试。App 与扩展都依赖它。
-- **金额一律用 `Decimal`**，不用浮点。
-- **持久化**：一个 `Codable` 的设置结构体，以 JSON 存入 App Group 的 `UserDefaults`，App 与扩展共享。不用 SwiftData。
-- **本地化**：String Catalog，`zh-Hans` 与 `en`，跟随系统语言。
-- **Bundle ID**：`com.andyuneducated.wagedrip`，扩展为其子标识。
-- **最低系统版本**：iOS / iPadOS / macOS 27。
+- **SwiftUI multiplatform app**: one app target covers iOS, iPadOS and macOS (native Mac, not Catalyst).
+- **WidgetKit extension**: hosts the widgets and the Live Activity UI.
+- **Local Swift package `WageDripCore`**: all calculation and data models, pure Swift, no dependency on UI frameworks, unit-tested with Swift Testing. Both the app and the extension depend on it.
+- **Amounts always use `Decimal`**, never floating point.
+- **Persistence**: one `Codable` settings struct, stored as JSON in the App Group's `UserDefaults`, shared by the app and the extension. SwiftData is not used.
+- **Localization**: String Catalog, `zh-Hans` and `en`, following the system language.
+- **Bundle ID**: `com.andyuneducated.wagedrip`; the extension uses a child identifier of it.
+- **Minimum system version**: iOS / iPadOS / macOS 27.
 
 ```
 WageDrip/
   WageDrip.xcodeproj
-  WageDrip/            App（界面、设置、菜单栏、实时活动控制）
-  WageDripWidgets/     小组件与实时活动界面
+  WageDrip/            App (UI, settings, menu bar, Live Activity control)
+  WageDripWidgets/     Widgets and Live Activity UI
   Packages/WageDripCore/
-    Sources/WageDripCore/   模型、计算引擎、日历、汇率、格式化
+    Sources/WageDripCore/   Models, calculation engine, calendar, exchange rates, formatting
     Tests/WageDripCoreTests/
   docs/
 ```
 
-## 6. 计算规则
+## 6. Calculation rules
 
-这是全应用的核心，全部放在 `WageDripCore`，必须有测试覆盖。
+This is the core of the whole app. All of it lives in `WageDripCore` and must be covered by tests.
 
-### 6.1 薪酬输入
+### 6.1 Pay input
 
-三种方式，任选其一：
+Three methods; pick one:
 
-- **年薪**：底薪必填；现金奖金、股票（或期权）各有一个开关和一个年化总额。月薪 M = 已启用项之和 ÷ 12。奖金与股票和底薪一样全年匀速计入。
-- **月薪**：直接填 M。
-- **时薪**：填每小时金额 H。
+- **Annual salary**: base salary is required; cash bonus and stock (or options) each have a toggle and an annualized total. Monthly salary M = sum of the enabled items ÷ 12. Bonus and stock accrue at a constant rate across the whole year, just like base salary.
+- **Monthly salary**: enter M directly.
+- **Hourly wage**: enter the amount per hour, H.
 
-另有：
+In addition:
 
-- **薪酬货币**：填写金额所用的货币。
-- **扣除比例 r**：0% 到 100%，用户自定。提供四个一键参考值：中国一线 22%、中国其他 18%、美国一线 32%、美国其他 25%。界面注明"粗略参考"。
-- **税前 / 税后显示开关**：税后金额 = 税前 × (1 − r)，作用于所有显示的金额。
+- **Pay currency**: the currency the amounts are entered in.
+- **Deduction rate r**: 0% to 100%, set by the user. Four one-tap reference values are provided: China tier-1 cities 22%, China other 18%, US tier-1 cities 32%, US other 25%. The UI labels them "rough reference".
+- **Pre-tax / after-tax display toggle**: after-tax amount = pre-tax × (1 − r), applied to every displayed amount.
 
-### 6.2 工作日
+### 6.2 Workdays
 
-某天是工作日，当且仅当：
+A given day is a workday if and only if:
 
-1. 用户对该日有手动标记时，以标记为准（上班 / 休息）；
-2. 否则，若节假日日历标为放假，则休息；标为调休补班，则上班；
-3. 否则，周一至周五上班，周六周日休息。
+1. When the user has manually marked that day, the mark wins (working / off);
+2. Otherwise, if the holiday calendar marks it as a holiday, it is off; if it marks it as a make-up workday, it is working;
+3. Otherwise, Monday to Friday are working and Saturday and Sunday are off.
 
-节假日日历按地区三选一：中国、美国、无。
+The holiday calendar is one of three choices by region: China, United States, none.
 
-### 6.3 日薪 D
+### 6.3 Daily pay D
 
-- **年薪 / 月薪方式**：D = M ÷ 当月工作日天数。因此月底累计恰好等于 M。节假日与周末当天不增长。
-- **时薪方式**：D = H × 每日排班时长（下班时间 − 上班时间，午休算带薪）。
+- **Annual / monthly salary method**: D = M ÷ number of workdays in the current month. As a result the month-end total equals exactly M. Nothing accrues on holidays and weekends.
+- **Hourly wage method**: D = H × scheduled daily hours (end of work − start of work, with the lunch break counted as paid).
 
-依据：中国法定折算为 21.75 天（人社部 2025 年通知），美国惯例为 2080 小时 / 260 天。用户选择了"按当月实际工作日分摊"，以保证月底数字等于月薪。
+Basis: China's statutory conversion is 21.75 days (Ministry of Human Resources and Social Security notice, 2025), and the US convention is 2080 hours / 260 days. The owner chose "spread over the actual workdays of the current month" to guarantee that the month-end number equals the monthly salary.
 
-### 6.4 日内分配 f(t)
+### 6.4 Intraday distribution f(t)
 
-f(t) 是当天 t 时刻已赚到的 D 的比例，范围 0 到 1。
+f(t) is the fraction of D already earned at time t of the day, ranging from 0 to 1.
 
-**固定工时（默认）**：上班时间前为 0；上班到下班之间线性从 0 到 1；下班后为 1。
+**Fixed hours (default)**: 0 before the start of work; linear from 0 to 1 between the start and the end of work; 1 after the end of work.
 
-**非固定工时**（仅年薪 / 月薪方式可开启；时薪方式不提供）：
+**Flexible hours** (can only be enabled with the annual / monthly salary method; not offered with the hourly wage method):
 
-- 0:00 到上班时间：权重 0。
-- 上班到下班：权重 80%，段内线性。
-- 下班到 24:00：权重 20%，段内线性。
+- 0:00 to the start of work: weight 0.
+- Start of work to end of work: weight 80%, linear within the segment.
+- End of work to 24:00: weight 20%, linear within the segment.
 
-两个权重可调，合计必须为 100%。此模式下不显示"距下班"倒计时。
+The two weights are adjustable and must add up to 100%. In this mode the "Until off work" countdown is not shown.
 
-非工作日 f 恒为 0，界面显示"今日休息"。
+On non-workdays f is always 0, and the UI shows "Day off today".
 
-### 6.5 三个累计值
+### 6.5 The three running totals
 
-- **今天** = D × f(t)。
-- **本月** = 本月已过完的工作日数 × D + 今天。
-- **今年** = 今年已过完的各月应得之和 + 本月。
+- **Today** = D × f(t).
+- **This month** = number of fully elapsed workdays this month × D + today.
+- **This year** = sum of the amounts due for each fully elapsed month this year + this month.
 
-**入职日期**（可选）：早于入职日的日子不计。入职当月应得 = 该月 D × 入职日起的工作日数（D 仍按整月工作日数计算）。入职日期在往年或未填时，从 1 月 1 日算起。
+**Start date** (optional): days before the start date do not count. Amount due for the month of the start date = that month's D × number of workdays from the start date onward (D is still computed from the full month's workday count). When the start date is in a previous year or not filled in, counting starts from January 1.
 
-时薪方式下，各月应得 = 该月工作日数 × D。
+With the hourly wage method, the amount due for each month = that month's workday count × D.
 
-"今年"按当前薪酬回推，不记录年内调薪。
+"This year" is back-calculated from the current pay; in-year raises are not recorded.
 
-### 6.6 时间与跨日
+### 6.6 Time and day rollover
 
-- 一律使用设备当前时区与日历。
-- 下班后今天的金额停在 D，到次日 0:00 归零。
-- 上班时间必须早于下班时间，不支持跨午夜的夜班（第一版）。
+- The device's current time zone and calendar are always used.
+- After the end of work, today's amount stays at D and resets to zero at 0:00 the next day.
+- The start of work must be earlier than the end of work; night shifts that cross midnight are not supported (first version).
 
-### 6.7 精度
+### 6.7 Precision
 
-- 内部用 `Decimal` 计算。
-- App 内与 Mac 菜单栏：小数位数可设 0 到 8，默认 6（即比"分"再细 4 位）。
-- 小组件与实时活动：固定 2 位，因为它们每分钟才更新一次。
+- Internally, calculations use `Decimal`.
+- In the app and in the Mac menu bar: the number of decimal places can be set from 0 to 8, default 6 (that is, 4 digits finer than cents).
+- Widgets and Live Activity: fixed at 2 places, because they only update once a minute.
 
-## 7. 货币与汇率
+## 7. Currency and exchange rates
 
-- **显示货币**可与薪酬货币不同，所有金额按汇率换算后显示。
-- **汇率来源**二选一：
-  - 自动：免费的每日汇率接口（欧洲央行数据，如 Frankfurter，无需密钥），每天最多取一次并缓存；取不到时用上次缓存，并在设置里显示汇率日期。
-  - 手动：用户输入固定汇率。
-- 支持的货币至少包括 CNY、USD、EUR、GBP、JPY、HKD、CAD、AUD、SGD。
-- 首次没有缓存且无网络时，自动模式退回 1:1 并明确提示，不静默显示错误金额。
+- The **display currency** may differ from the pay currency; all amounts are shown after conversion at the exchange rate.
+- **Exchange rate source**, one of two:
+  - Automatic: a free daily exchange rate API (European Central Bank data, such as Frankfurter, no key required), fetched at most once a day and cached; when the fetch fails, the last cached value is used, and the rate date is shown in settings.
+  - Manual: the user enters a fixed rate.
+- Supported currencies include at least CNY, USD, EUR, GBP, JPY, HKD, CAD, AUD, SGD.
+- On first use with no cache and no network, automatic mode falls back to 1:1 and says so explicitly, rather than silently showing wrong amounts.
 
-## 8. 节假日数据
+## 8. Holiday data
 
-- **中国**：使用开源项目 `neolee/holiday-cn` 的年度 JSON（每日自动抓取国务院公告），含放假日与调休补班日。把当前年与下一年的文件打包进 App；每周最多联网检查一次更新。注意该项目的说明：12 月的日期可能出现在下一年的文件里，需同时读取两年。
-- **美国**：11 个联邦假日按规则在代码中计算，含顺延规则（周六顺延到周五，周日顺延到周一）。
-- **手动标记**：设置里可把任意一天标为上班或休息，优先级最高。
+- **China**: uses the yearly JSON from the open-source project `neolee/holiday-cn` (which scrapes State Council announcements automatically every day), containing both holidays and make-up workdays. The files for the current year and the next year are bundled into the app; it checks online for updates at most once a week. Note the project's own caveat: December dates may appear in the next year's file, so both years must be read together.
+- **United States**: the 11 federal holidays are computed in code by rule, including the observance rules (Saturday shifts to Friday, Sunday shifts to Monday).
+- **Manual marks**: in settings, any day can be marked as working or off; this has the highest priority.
 
-## 9. 等价换算与里程碑
+## 9. Equivalents and milestones
 
-### 9.1 等价换算
+### 9.1 Equivalents
 
-把金额折算成常见事物的数量，例如"折合奶茶 49.5 杯"。用户选一个当前展示项，可增删改。按地区给默认项：
+Converts an amount into a quantity of some everyday thing, for example "Equals Milk tea × 49.5". The user picks one item to show at a time and can add, delete and edit items. Defaults are provided by region:
 
-| 中国 | 默认价 | 美国 | 默认价 |
+| China | Default price | United States | Default price |
 |---|---|---|---|
-| 奶茶 | ¥15 | Coffee | $5 |
-| 咖啡 | ¥10 | Burrito | $12 |
-| 外卖 | ¥30 | Burger | $6 |
-| 地铁票 | ¥4 | Gallon of gas | $3.5 |
-| 火锅 | ¥120 | Streaming month | $18 |
+| Milk tea | ¥15 | Coffee | $5 |
+| Coffee | ¥10 | Burrito | $12 |
+| Takeout | ¥30 | Burger | $6 |
+| Subway ride | ¥4 | Gallon of gas | $3.5 |
+| Hot pot | ¥120 | Streaming month | $18 |
 | iPhone | ¥7,999 | iPhone | $999 |
 
-每项有自己的货币，换算时走汇率。价格为粗略默认值，用户可改。
+Each item has its own currency, and conversion goes through the exchange rate. Prices are rough defaults that the user can change.
 
-### 9.2 里程碑
+### 9.2 Milestones
 
-一个里程碑 = 名称 + 金额 + 货币 + 所属周期（天 / 月 / 年）。按地区给默认项：
+A milestone = name + amount + currency + the period it belongs to (day / month / year). Defaults are provided by region:
 
-| 周期 | 中国 | 美国 |
+| Period | China | United States |
 |---|---|---|
-| 天 | 午饭 ¥30、通勤 ¥10 | Lunch $15、Commute $6 |
-| 月 | 房租 ¥5,000 | Rent $2,000 |
-| 年 | 第一个一万 ¥10,000、第一个十万 ¥100,000 | First $10k、First $100k |
+| Day | Lunch ¥30, Commute ¥10 | Lunch $15, Commute $6 |
+| Month | Rent ¥5,000 | Rent $2,000 |
+| Year | First 10k ¥10,000, First 100k ¥100,000 | First $10k, First $100k |
 
-达成判定（设计者的决定）：用**界面上显示的金额**比较，即开了税后显示就按税后算。里程碑金额先按汇率换算到显示货币再比较。扣除比例、税前税后开关、汇率、薪酬或上班时间任一变化时，重新计算越过时刻并重排通知。
+How reaching a milestone is determined (the designer's decision): the comparison uses **the amount shown in the UI**, that is, if after-tax display is on, the after-tax amount is used. The milestone amount is first converted to the display currency at the exchange rate and then compared. Whenever the deduction rate, the pre-tax / after-tax toggle, the exchange rate, the pay or the working hours change, the crossing times are recomputed and the notifications rescheduled.
 
-- 主界面显示当前周期内已达成的里程碑。
-- **提醒**（可关）：因为收入曲线是确定的，可以提前算出越过时刻并排定本地通知，不需要后台运行。首次开启时请求通知权限。
-- 可增删改。
+- The main screen shows the milestones already reached within the current period.
+- **Reminders** (can be turned off): because the income curve is deterministic, the crossing time can be computed ahead of time and a local notification scheduled, with no need to run in the background. Notification permission is requested the first time this is turned on.
+- Milestones can be added, deleted and edited.
 
-## 10. 各个显示位置
+## 10. Display surfaces
 
-显示哪些周期（今天 / 本月 / 今年）由一个全局设置决定，至少选一项。各位置如何遵从它（设计者的决定）：
+Which periods are shown (today / this month / this year) is determined by one global setting, with at least one selected. How each surface follows it (the designer's decision):
 
-- **多行位置**（主界面、菜单栏弹出的迷你小票、中号小组件、实时活动锁屏卡片与灵动岛展开态）：显示全部已选周期，每个周期一行。
-- **单值位置**（小号桌面小组件、三种锁屏小组件）：每个小组件实例有自己的"周期"参数，在系统的小组件编辑界面里选，默认今天。这样用户可以并排放"今天"和"本月"两个小组件。
-- **固定为今天的位置**：Mac 菜单栏标题、灵动岛紧凑态。它们只有一个数字的空间，不随设置变化。
+- **Multi-line surfaces** (main screen, the mini receipt that pops up from the menu bar, medium widget, the Live Activity Lock Screen card and the expanded Dynamic Island): show all selected periods, one line per period.
+- **Single-value surfaces** (small Home Screen widget, the three kinds of Lock Screen widget): each widget instance has its own "period" parameter, chosen in the system's widget editing UI, defaulting to today. This lets the user place a "today" widget and a "this month" widget side by side.
+- **Surfaces fixed to today**: the Mac menu bar title and the compact Dynamic Island. They only have room for one number and do not change with the setting.
 
-| 位置 | 更新方式 | 内容 |
+| Surface | How it updates | Content |
 |---|---|---|
-| App 主界面 | 逐帧（`TimelineView`） | 完整小票 |
-| Mac 菜单栏 | 每秒 | 标题：今天金额；点开为迷你小票 |
-| 中号桌面小组件 | 预排时间表，每分钟一项 | 已选周期金额、等价换算 |
-| 小号桌面小组件 | 同上 | 所配置周期的金额 |
-| 锁屏小组件（矩形、行内、圆形） | 同上 | 所配置周期的金额 |
-| 实时活动：锁屏卡片 | App 有机会时更新 | 已选周期金额、截至时间、倒计时 |
-| 实时活动：灵动岛 | 同上 | 紧凑：今天金额；展开：同锁屏卡片 |
+| App main screen | Per frame (`TimelineView`) | Full receipt |
+| Mac menu bar | Every second | Title: today's amount; click to open the mini receipt |
+| Medium Home Screen widget | Pre-scheduled timeline, one entry per minute | Amounts for the selected periods, equivalents |
+| Small Home Screen widget | Same as above | Amount for the configured period |
+| Lock Screen widgets (rectangular, inline, circular) | Same as above | Amount for the configured period |
+| Live Activity: Lock Screen card | Updated when the app gets a chance | Amounts for the selected periods, as-of time, countdown |
+| Live Activity: Dynamic Island | Same as above | Compact: today's amount; expanded: same as the Lock Screen card |
 
-### 10.1 小组件时间表
+### 10.1 Widget timeline
 
-工作时段内每分钟一个条目；非工作时段金额不变，只需少量条目。每次重载覆盖到下一个自然断点（下班、午夜）。系统对重载次数有配额，具体的条目数量与重载策略留给实现者在真机上调校。
+One entry per minute during working hours; outside working hours the amount does not change, so only a few entries are needed. Each reload covers up to the next natural breakpoint (end of work, midnight). The system has a budget for the number of reloads; the exact number of entries and the reload strategy are left for the implementer to tune on a real device.
 
-### 10.2 实时活动
+### 10.2 Live Activity
 
-- **启动**：App 内手动按钮；另有设置项"工作时段打开 App 时自动启动"。
-- **定时启动**：评估用 `request(...start:)` 预约下一个上班时间自动启动；若该接口在免费账号或本地场景不可用，则放弃，不影响其他功能。
-- **内容与主次**（用户明确要求）：当前金额是最重要、最突出的元素，字号最大、位置居首。"截至 HH:mm"与距下班倒计时（`Text(timerInterval:)`，仅固定工时）为次要信息。不做进度条。
-- **第一版保留实时活动**（用户决定）：即使真机实验显示后台更新稀少，也不砍掉、不改成以倒计时为主。实现上应尽力提高金额刷新频率，实验中逐一尝试：后台任务调度、`NSSupportsLiveActivitiesFrequentUpdates`、定时启动、以及 App 生命周期各个回调里的更新。金额滞后时靠"截至"时间戳和过期样式如实告知。
-- **更新**：App 回到前台时；系统给后台任务机会时。
-- **结束**：固定工时在下班时结束并显示当天总额。非固定工时的计薪时段可达 15 小时，超过系统 8 小时上限，活动会被系统结束，需要用户再次打开 App 重启；界面上说明这一点。
-- **过期**：超过 15 分钟未更新，进入过期样式。
+- **Start**: a manual button in the app; plus a setting, "start automatically when the app is opened during working hours".
+- **Scheduled start**: evaluate using `request(...start:)` to schedule an automatic start at the next start of work; if that API is unavailable with a free account or in the local scenario, drop it, with no effect on other features.
+- **Content and hierarchy** (explicitly required by the owner): the current amount is the most important and most prominent element, with the largest type and the first position. "As of HH:mm" and the countdown until off work (`Text(timerInterval:)`, fixed hours only) are secondary information. No progress bar.
+- **The Live Activity stays in the first version** (the owner's decision): even if the real-device experiment shows that background updates are sparse, it is not cut and not changed to be countdown-first. The implementation should do its best to raise the amount's refresh frequency, trying each of these in the experiment: background task scheduling, `NSSupportsLiveActivitiesFrequentUpdates`, scheduled start, and updates in each of the app lifecycle callbacks. When the amount lags, the "as of" timestamp and the stale style tell the truth about it.
+- **Update**: when the app returns to the foreground; when the system gives a background task a chance to run.
+- **End**: with fixed hours, it ends at the end of work and shows the day's total. With flexible hours the paid period can reach 15 hours, which exceeds the system's 8-hour limit, so the activity will be ended by the system and the user has to open the app again to restart it; the UI explains this.
+- **Stale**: after more than 15 minutes without an update, it enters the stale style.
 
-### 10.3 真机实验
+### 10.3 Real-device experiment
 
-实现早期做一次一次性的真机实验，实测本地更新实时活动的实际频率，以及小组件每分钟时间表的实际表现。结果用来调校 10.1 和 10.2 的参数，实验代码不保留。
+Early in implementation, run a one-off real-device experiment to measure the actual frequency of local Live Activity updates and the actual behavior of the per-minute widget timeline. The results are used to tune the parameters in 10.1 and 10.2; the experiment code is not kept.
 
-设备与分工：用户有一台 iPhone 17 Pro Max（有灵动岛，可真机验证灵动岛界面）和一台 iPad，以及开发用的 Mac。真机上的操作（连接、信任、开启开发者模式、安装、日常观察）由用户在指导下完成。iPhone 的开发者模式尚未开启，需在首次真机安装前带用户开启。
+Devices and division of labor: the owner has an iPhone 17 Pro Max (with a Dynamic Island, so the Dynamic Island UI can be verified on a real device) and an iPad, plus the Mac used for development. Operations on the real devices (connecting, trusting, turning on Developer Mode, installing, day-to-day observation) are done by the owner under guidance. Developer Mode is not yet turned on on the iPhone, and the owner needs to be walked through turning it on before the first real-device install.
 
-## 11. 界面观感：工资条
+## 11. Visual design: the receipt
 
-用户在三个方向中选定"A 工资条"。
+Out of three directions, the owner chose "A: Receipt".
 
-- **意象**：热敏打印小票。米色纸底、深灰字、等宽字体、虚线分隔、居中的抬头与落款。
-- **主界面结构**（自上而下）：
+- **Imagery**: a thermal-printer receipt. Cream paper background, dark gray text, monospaced font, dashed dividers, a centered header and sign-off.
+- **Main screen structure** (top to bottom):
 
 ```
-            窝 囊 费
-     11月24日 周二 · 上班中
+            WAGE DRIP
+   Tue, Nov 24 · On the clock
   - - - - - - - - - - - - - - -
-  今日实收
+  Earned today
   ¥742.318642
   - - - - - - - - - - - - - - -
-  本月              ¥14,105.52
-  今年             ¥268,340.17
+  This month         ¥14,105.52
+  This year         ¥268,340.17
   - - - - - - - - - - - - - - -
-  折合奶茶             49.5 杯
-  已赚回             午饭 通勤
+  Equals Milk tea        × 49.5
+  Covered         Lunch Commute
   - - - - - - - - - - - - - - -
-        距下班 02:41:07
-      谢谢惠顾 明天再来
+     Until off work 02:41:07
+      Thank you, come again
 ```
 
-- **今日金额**：逐位滚动的打表动画（设计者的决定）。
-- **深色模式**：单独设计的"夜间小票"，深底浅字，保留虚线与等宽字体，不是简单反色（设计者的决定）。
-- **状态文案**：上班中、已下班、今日休息、未到上班时间，落款随状态变化，保持自嘲语气。
-- **小组件与实时活动**沿用同一套纸色、字体与虚线。
-- **iPad 与 Mac**：小票保持窄幅居中，不随窗口拉宽。
-- **设置**：使用系统标准表单样式，不做成小票，保证可用性。
+- **Today's amount**: an odometer-style animation that rolls digit by digit (the designer's decision).
+- **Dark mode**: a separately designed "night receipt", with a dark background and light text, keeping the dashed lines and the monospaced font, not a simple color inversion (the designer's decision).
+- **Status copy**: On the clock, Off work, Day off today, Before work; the sign-off changes with the status and keeps the self-deprecating tone.
+- **Widgets and Live Activity** reuse the same paper color, font and dashed lines.
+- **iPad and Mac**: the receipt stays narrow and centered and does not stretch with the window.
+- **Settings**: use the system's standard form style, not styled as a receipt, to guarantee usability.
 
-## 12. 设置项一览
+## 12. Settings at a glance
 
-- 地区（中国 / 美国）：决定节假日日历、默认货币、默认等价项、默认里程碑。首次启动按系统地区推断，可改。更改地区不覆盖用户已改过的内容。
-- 薪酬方式与金额、奖金开关、股票开关、薪酬货币。
-- 扣除比例与四个参考值、税前 / 税后显示。
-- 上班时间、下班时间。
-- 非固定工时开关与两个权重。
-- 入职日期（可选）。
-- 节假日日历（中国 / 美国 / 无）、手动标记日。
-- 显示周期（今天 / 本月 / 今年，多选）。
-- 小数位数。
-- 显示货币、汇率模式、手动汇率。
-- 等价换算项、里程碑、里程碑提醒开关。
-- 实时活动自动启动开关。
+- Region (China / United States): determines the holiday calendar, the default currency, the default equivalents and the default milestones. Inferred from the system region on first launch, and can be changed. Changing the region does not overwrite anything the user has already edited.
+- Pay method and amount, bonus toggle, stock toggle, pay currency.
+- Deduction rate and the four reference values, pre-tax / after-tax display.
+- Start of work, end of work.
+- Flexible hours toggle and the two weights.
+- Start date (optional).
+- Holiday calendar (China / United States / none), manually marked days.
+- Displayed periods (today / this month / this year, multi-select).
+- Number of decimal places.
+- Display currency, exchange rate mode, manual exchange rate.
+- Equivalents, milestones, milestone reminder toggle.
+- Live Activity auto-start toggle.
 
-首次启动走一个简短的引导：地区、薪酬、上班时间，三步即可看到小票。
+First launch goes through a short onboarding: region, pay, working hours; three steps and the receipt is on screen.
 
-## 13. 测试
+## 13. Testing
 
-- `WageDripCore` 用 Swift Testing 做单元测试，重点覆盖：
-  - 月底累计等于月薪（含有节假日和调休的月份，如 2027 年 2 月与 10 月）。
-  - 固定与非固定工时的日内曲线及各边界时刻。
-  - 入职日期在年初、月中、往年的三种情况。
-  - 美国联邦假日的顺延规则。
-  - 汇率换算与缓存回退。
-  - 里程碑越过时刻的计算。
-- 界面以模拟器和真机手动验证为主。
+- `WageDripCore` is unit-tested with Swift Testing, with a focus on:
+  - The month-end total equals the monthly salary (including months with holidays and make-up workdays, such as February and October 2027).
+  - The intraday curves for fixed and flexible hours and each boundary moment.
+  - The three start date cases: at the beginning of the year, mid-month, and in a previous year.
+  - The observance rules for US federal holidays.
+  - Exchange rate conversion and cache fallback.
+  - Calculation of milestone crossing times.
+- The UI is verified mainly by hand on the simulator and on real devices.
 
-## 14. 留给实现者决定
+## 14. Left to the implementer
 
-- 小组件时间表的条目数量与重载策略。
-- 后台任务的具体调度方式。
-- 非固定工时在数据模型里是固定两段还是通用的分段列表（界面只需暴露两个权重）。
-- 打表动画的具体实现。
-- 各 SwiftUI 视图的拆分与命名。
+- The number of entries in the widget timeline and the reload strategy.
+- The specific way background tasks are scheduled.
+- Whether flexible hours is a fixed pair of segments in the data model or a general list of segments (the UI only needs to expose the two weights).
+- The specific implementation of the odometer animation.
+- How the SwiftUI views are split up and named.
 
-## 15. 以后再做
+## 15. Later
 
-- 推送服务，让实时活动金额稳定每分钟更新（需要付费账号）。
-- iCloud 同步设置。
-- 上架 App Store 所需的图标、截图、隐私说明。
-- Apple Watch。
-- 年内调薪历史、夜班。
+- A push service so the Live Activity amount updates reliably every minute (requires a paid account).
+- iCloud sync of settings.
+- The icon, screenshots and privacy disclosures needed for the App Store release.
+- Apple Watch.
+- In-year raise history, night shifts.
 
-## 16. 资料来源
+## 16. Sources
 
-- ActivityKit 与 WidgetKit 更新日志、"Displaying live data with Live Activities"（Apple 开发者文档）。
-- Apple 开发者论坛主题 797554（实时活动更新频率）。
-- `neolee/holiday-cn`；国务院办公厅 2027 年节假日安排通知（2026-11-05）。
-- 人社部 2025 年关于月计薪天数的通知（21.75 天）。
-- `AndyUneducated/financial-calculators`（扣除比例参考值的量级依据）。
+- ActivityKit and WidgetKit release notes, "Displaying live data with Live Activities" (Apple developer documentation).
+- Apple Developer Forums thread 797554 (Live Activity update frequency).
+- `neolee/holiday-cn`; General Office of the State Council notice on the 2027 holiday schedule (2026-11-05).
+- Ministry of Human Resources and Social Security 2025 notice on the number of paid days per month (21.75 days).
+- `AndyUneducated/financial-calculators` (the basis for the order of magnitude of the deduction rate reference values).
 
-## 17. 真机实验结果（2026-11-24）
+## 17. Real-device experiment results (2026-11-24)
 
-设备：iPhone 17 Pro Max，iOS 27，免费个人团队签名，未接电源。观察时长约 39 分钟（22:32 至 23:11），样本偏小，后台频率的数字应视为偏乐观的估计。实验代码在分支 `spike/device-cadence`，不合并。
+Device: iPhone 17 Pro Max, iOS 27, signed with a free personal team, not plugged in. Observation lasted about 39 minutes (22:32 to 23:11); the sample is on the small side, and the background frequency numbers should be treated as optimistic estimates. The experiment code is on the branch `spike/device-cadence` and is not merged.
 
-| 项目 | 结果 |
+| Item | Result |
 |---|---|
-| App Group（免费账号） | 可用。需先在 Xcode 的 Signing & Capabilities 里登记一次，命令行无法登记。App 与小组件双向读写正常 |
-| 小组件分钟级时间表 | 主屏小号小组件与真实时间基本同步，用户观察到几分钟以内的偏差。锁屏小组件未测 |
-| 实时活动：刚退后台 | 约 25 秒内仍可更新，之后被挂起 |
-| 实时活动：后台刷新任务 | 约每 7 到 9 分钟被唤醒并成功更新一次（三次样本：间隔 7、9、9 分钟） |
-| 实时活动：定时启动 `request(...start:)` | 可用。预约 120 秒后准时变为 active，App 在后台、手机锁屏；启动时系统唤醒 App 约 20 秒 |
-| 实时活动：前台更新 | 未记录到（实验代码缺陷），按已知行为视为可用 |
+| App Group (free account) | Works. It must first be registered once in Xcode's Signing & Capabilities; it cannot be registered from the command line. Reads and writes work in both directions between the app and the widget |
+| Per-minute widget timeline | The small Home Screen widget stays roughly in sync with real time; the owner observed deviations of within a few minutes. Lock Screen widgets were not tested |
+| Live Activity: just after going to the background | Can still update for about 25 seconds, then the app is suspended |
+| Live Activity: background refresh task | Woken up and updated successfully about once every 7 to 9 minutes (three samples: intervals of 7, 9 and 9 minutes) |
+| Live Activity: scheduled start `request(...start:)` | Works. Scheduled 120 seconds ahead, it became active on time, with the app in the background and the phone locked; on start, the system wakes the app for about 20 seconds |
+| Live Activity: foreground update | Not recorded (a defect in the experiment code); treated as working based on known behavior |
 
-未测：锁屏小组件、低电量模式、从后台划掉 App 后的定时启动、隔夜、接电源。
+Not tested: Lock Screen widgets, Low Power Mode, scheduled start after swiping the app away from the app switcher, overnight, plugged in.
 
-据此定下的参数：
+Parameters settled on this basis:
 
-- 小组件时间表：`minuteStep = 1`，`maxEntries = 240`，维持原设计。
-- 实时活动过期阈值：15 分钟，维持原设计（后台刷新间隔约为其一半）。
-- 后台刷新任务每次执行后重新提交，最早开始时间设为 5 分钟后。
-- 采用定时启动：每次活动结束时预约下一个工作日的上班时刻；固定工时与非固定工时均适用。
-- 实时活动金额在无推送时约 7 到 9 分钟刷新一次，"截至 HH:mm"时间戳必须保留。
+- Widget timeline: `minuteStep = 1`, `maxEntries = 240`, keeping the original design.
+- Live Activity stale threshold: 15 minutes, keeping the original design (the background refresh interval is about half of that).
+- The background refresh task is resubmitted after each run, with the earliest begin time set to 5 minutes later.
+- Scheduled start is adopted: each time an activity ends, the start of work on the next workday is scheduled; this applies to both fixed hours and flexible hours.
+- Without push, the Live Activity amount refreshes about once every 7 to 9 minutes, so the "as of HH:mm" timestamp must stay.
 
-工程配置上的发现：`project.yml` 需声明 App Groups 能力；开发团队通过环境变量传入（`DEVELOPMENT_TEAM=<团队 ID> xcodegen generate`），不写进仓库；macOS 目标必须有开发团队才能签名构建。
+Findings on project configuration: `project.yml` needs to declare the App Groups capability; the development team is passed in through an environment variable (`DEVELOPMENT_TEAM=<team ID> xcodegen generate`) and is not written into the repository; the macOS target must have a development team in order to be signed and built.
 
-### 17.1 阶段四实现中的补充发现（模拟器）
+### 17.1 Additional findings during the phase 4 implementation (simulator)
 
-- 系统对每个 App 的实时活动数量有上限：模拟器上预约 5 个定时启动后，再启动当天的活动会报 "Maximum number of activities for target already exists"。因此只提前预约 2 个工作日，为当天的活动留出名额。
-- 启动实时活动必须在前台进行，所以"每日自动出现"依赖预约：每次打开 App 时预约之后 2 个工作日。连续超过 2 个工作日不打开 App，自动出现会中断，直到下次打开。
-- 定时启动的接口要求附带提醒配置，所以每天上班时刻实时活动出现时会有一次提示音。
-- 模拟器不支持后台刷新任务（`BGTaskScheduler`），后台更新只能在真机上验证。
+- The system caps the number of Live Activities per app: on the simulator, after scheduling 5 scheduled starts, starting the current day's activity fails with "Maximum number of activities for target already exists". So only 2 workdays are scheduled ahead, leaving a slot for the current day's activity.
+- Starting a Live Activity must happen in the foreground, so "appears automatically every day" depends on scheduling: each time the app is opened, the next 2 workdays are scheduled. If the app is not opened for more than 2 consecutive workdays, the automatic appearance stops until the next time it is opened.
+- The scheduled start API requires an alert configuration to be attached, so there is one alert sound each day when the Live Activity appears at the start of work.
+- The simulator does not support background refresh tasks (`BGTaskScheduler`); background updates can only be verified on a real device.

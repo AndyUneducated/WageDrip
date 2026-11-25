@@ -1,23 +1,25 @@
 # WageDrip / 窝囊费
 
-工资计时器：iOS、iPadOS、macOS 多平台 SwiftUI App，带小组件、实时活动和 Mac 菜单栏。
+A salary ticker: a multiplatform SwiftUI app for iOS, iPadOS and macOS with widgets, a Live Activity and a Mac menu bar item.
 
-## 工作约定
+## Working agreements
 
-- **本项目不使用 superpowers 插件。** 不调用它的任何技能（brainstorming、writing-plans、executing-plans、subagent-driven-development 等），也不按它的流程或目录约定行事。（用户 2026-11-24 明确要求。）
-- 用中文与用户沟通。
-- 用户要求：在明确说开始之前不要动手执行；讨论阶段多提建议和问题。
-- git 提交身份已在仓库内设为 AndyUneducated，不要改全局 git 配置。
+- **Do not use the superpowers plugin in this project.** Do not invoke any of its skills (brainstorming, writing-plans, executing-plans, subagent-driven-development and so on) or follow its workflows or directory conventions. (Explicit owner request, 2026-11-24.)
+- **All documentation and commit messages are in English.** (Explicit owner request, 2026-11-24.) Code comments are English too. The app's own UI strings are bilingual and keyed by their Chinese text in `WageDrip/Localizable.xcstrings`.
+- Talk to the owner in Chinese.
+- Do not start executing until the owner clearly says to start; during discussion, offer suggestions and ask questions.
+- The git identity is set to AndyUneducated in this repo only. Do not change the global git config.
+- The repository is public at github.com/AndyUneducated/WageDrip. Keep team IDs, device identifiers and personal details out of the repo.
 
-## 文档
+## Documents
 
-- 设计文档：`docs/specs/2026-11-24-wagedrip-design.md`
-- 实施计划：`docs/plans/2026-11-24-wagedrip-v1.md`
+- Design spec: `docs/specs/2026-11-24-wagedrip-design.md`
+- Implementation plan: `docs/plans/2026-11-24-wagedrip-v1.md`
 
-## 常用命令
+## Common commands
 
-- 核心测试：`swift test --package-path Packages/WageDripCore`
-- 生成工程：`DEVELOPMENT_TEAM=<团队 ID> /opt/homebrew/bin/xcodegen generate`（团队 ID 见 Xcode › Settings › Accounts；不写进仓库）
-- 模拟器构建：`xcodebuild -project WageDrip.xcodeproj -scheme WageDrip -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath DerivedData build`
-- 本机模拟器没有 iPhone 17 Pro Max，用 iPhone 17；iPad 用 iPad Pro 13-inch (M5)
-- 真机日志可直接读取：`xcrun devicectl device copy from --domain-type appGroupDataContainer --domain-identifier group.com.andyuneducated.wagedrip ...`
+- Core tests: `swift test --package-path Packages/WageDripCore`
+- Generate the project: `DEVELOPMENT_TEAM=<team ID> /opt/homebrew/bin/xcodegen generate` (team ID under Xcode › Settings › Accounts; never commit it)
+- Simulator build: `xcodebuild -project WageDrip.xcodeproj -scheme WageDrip -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath DerivedData build`
+- This machine has no iPhone 17 Pro Max simulator; use iPhone 17. For iPad use iPad Pro 13-inch (M5).
+- The diagnostics log on a physical device can be read directly: `xcrun devicectl device copy from --domain-type appGroupDataContainer --domain-identifier group.com.andyuneducated.wagedrip ...`
