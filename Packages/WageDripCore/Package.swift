@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "WageDripCore",
-    platforms: [.iOS("27.0"), .macOS("27.0")],
+    platforms: [.iOS("27.0"), .macOS("27.0"), .watchOS("27.0")],
     products: [
         .library(name: "WageDripCore", targets: ["WageDripCore"])
     ],

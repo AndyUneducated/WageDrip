@@ -18,6 +18,7 @@
   <img alt="iOS 27" src="https://img.shields.io/badge/iOS-27-000000?logo=apple&logoColor=white">
   <img alt="iPadOS 27" src="https://img.shields.io/badge/iPadOS-27-000000?logo=apple&logoColor=white">
   <img alt="macOS 27" src="https://img.shields.io/badge/macOS-27-000000?logo=apple&logoColor=white">
+  <img alt="watchOS 27" src="https://img.shields.io/badge/watchOS-27-000000?logo=apple&logoColor=white">
   <img alt="Languages" src="https://img.shields.io/badge/languages-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-F4EFE2">
   <a href="https://github.com/AndyUneducated/WageDrip/releases"><img alt="Release" src="https://img.shields.io/github/v/release/AndyUneducated/WageDrip?color=2C2C2A"></a>
 </p>
@@ -53,7 +54,7 @@
 | Calendars | China public holidays with make-up workdays, US federal holidays, manual per-day overrides |
 | Money | Pre-tax or after a deduction rate you set; display in another currency at a daily or manual rate |
 | Extras | Equivalents ("equals 94.7 milk teas"), milestones ("lunch is covered") with optional notifications |
-| Surfaces | App, Home Screen and Lock Screen widgets, Live Activity and Dynamic Island, Mac menu bar |
+| Surfaces | App, Home Screen and Lock Screen widgets, Live Activity and Dynamic Island, Mac menu bar, Apple Watch app |
 | Privacy | No account, no backend. Everything stays on the device |
 
 ## Using the app
@@ -114,6 +115,17 @@ Toolbar buttons:
 - The current amount is the largest element. "As of" shows when it was last refreshed; the countdown ticks every second.
 - With **Show automatically at work** on, it appears by itself at your start time on workdays (with one alert sound) and settles when work ends.
 - The Dynamic Island shows a drop icon and today's amount.
+
+### Apple Watch
+
+<p>
+  <img src="docs/images/watch.png" width="20%" alt="Apple Watch app">
+  <img src="docs/images/watch-smart-stack.png" width="20%" alt="Live Activity in the watch's Smart Stack">
+</p>
+
+- The watch app is one small receipt: today's amount ticking, the other periods, and the countdown.
+- It has no settings of its own. Change anything on the iPhone and the watch follows within a few seconds; it needs the iPhone app to have been opened once.
+- The iPhone's Live Activity shows in the watch's Smart Stack, with the app icon at the top of the watch face. Tapping it opens the watch app.
 
 ### Mac menu bar
 
@@ -215,6 +227,13 @@ flowchart LR
         LAC[Live Activity controller]
         Notif[Milestone notifier]
         Menu[Mac menu bar]
+        Sync[Watch sync]
+    end
+
+    subgraph Watch["WageDripWatch app (watchOS)"]
+        direction TB
+        WStore[WatchStore]
+        WReceipt[Watch receipt]
     end
 
     subgraph Ext["WageDripWidgets extension"]
@@ -247,6 +266,7 @@ flowchart LR
 |---|---|---|
 | App receipt | Redrawn every frame from the engine | Continuous |
 | Mac menu bar | Redrawn every second | 1 second |
+| Apple Watch app | Computed on the watch from settings the iPhone sent; redrawn five times a second | Continuous |
 | Widgets | A timeline of pre-computed entries, one per minute during paid hours | About 1 minute |
 | Live Activity amount | Updated only when the app gets to run | About 7 to 9 minutes in the background |
 | Live Activity countdown | Driven by the system clock | 1 second |
@@ -281,7 +301,7 @@ sequenceDiagram
 
 | Tool | Version | Note |
 |---|---|---|
-| Xcode | 27 or later | iOS, iPadOS and macOS 27 SDKs |
+| Xcode | 27 or later | iOS, iPadOS, macOS and watchOS 27 SDKs |
 | XcodeGen | 2.48 or later | `brew install xcodegen` |
 | Apple account | Any | A free Personal Team works |
 
@@ -319,6 +339,7 @@ Tap the Version row in Settings five times to reveal a Diagnostics page. It logs
 | `Packages/WageDripCore` | Calculation core and data model, with unit tests |
 | `WageDrip` | App: receipt, onboarding, settings, Live Activity control, notifications |
 | `WageDripWidgets` | Widgets and Live Activity views |
+| `WageDripWatch` | Apple Watch app, embedded in the iPhone app |
 | `Shared` | Code compiled into both the app and the extension |
 | `project.yml` | XcodeGen project definition |
 | `docs/specs` | Design spec, including on-device measurements |
@@ -330,7 +351,7 @@ Tap the Version row in Settings five times to reveal a Diagnostics page. It logs
 - **The Live Activity amount is not live.** It refreshes when the app gets to run. Use a widget for a figure accurate to the minute.
 - **Automatic appearance needs an occasional launch.** Each time you open the app it schedules the next 2 workdays. Go more than 2 workdays without opening it and the Live Activity stops appearing until you do.
 - **Flexible hours and the 8-hour cap.** iOS ends a Live Activity after 8 hours, which is shorter than a start-to-midnight day.
-- **Apple Watch.** A paired watch mirrors the Live Activity in its Smart Stack with a compact layout. There is no watch app, and on a build installed from Xcode the watch shows a blank app icon and does nothing when tapped; the cause is not established. To hide it, turn WageDrip off under Settings › Smart Stack › Live Activities on the watch.
+- **Apple Watch.** The watch app has no complications or Smart Stack widget yet, cannot change settings, and never goes to the network: it uses the exchange rate and holiday data the iPhone last sent. The Live Activity always mirrors to a paired watch; to hide it, turn WageDrip off under Settings › Smart Stack › Live Activities on the watch. The watch app has been tested in the simulator only.
 - **Free Apple accounts.** Apps expire after 7 days and a device holds at most 3 such apps. No iCloud, so settings do not sync between devices. No push.
 - **One pay rate per year.** "This year" is projected back from your current pay; mid-year raises are not tracked.
 - **No overnight shifts.** Work must start and end on the same day.

@@ -21,5 +21,6 @@ A salary ticker: a multiplatform SwiftUI app for iOS, iPadOS and macOS with widg
 - Core tests: `swift test --package-path Packages/WageDripCore`
 - Generate the project: `DEVELOPMENT_TEAM=<team ID> /opt/homebrew/bin/xcodegen generate` (team ID under Xcode › Settings › Accounts; never commit it)
 - Simulator build: `xcodebuild -project WageDrip.xcodeproj -scheme WageDrip -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath DerivedData build`
+- Watch testing: the Apple Watch Ultra 4 (49mm) simulator is paired with the iPhone 17 simulator. A simulator build also produces `DerivedData/Build/Products/Debug-watchsimulator/WageDripWatch.app`; install it on the watch simulator with `xcrun simctl install`. There is no Simulator window on this machine and the simulator tool does not drive watches, so interact through a temporary watchOS UI test (`XCUIDevice`, and `XCUIApplication(bundleIdentifier: "com.apple.Carousel")` for the watch face).
 - This machine has no iPhone 17 Pro Max simulator; use iPhone 17. For iPad use iPad Pro 13-inch (M5).
 - The diagnostics log on a physical device can be read directly: `xcrun devicectl device copy from --domain-type appGroupDataContainer --domain-identifier group.com.andyuneducated.wagedrip ...`

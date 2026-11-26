@@ -78,3 +78,12 @@ extension CNHolidays {
         URL(string: "https://raw.githubusercontent.com/NateScarlet/holiday-cn/master/\(year).json")!
     }
 }
+
+extension CNHolidays {
+    /// The year files downloaded so far, keyed by year, for handing to another device.
+    public static func downloadedFiles(storage: KeyValueStoring) -> [Int: Data] {
+        let years = storage.data(forKey: indexKey).flatMap { try? JSONDecoder().decode([Int].self, from: $0) } ?? []
+        return Dictionary(years.compactMap { year in storage.data(forKey: storageKey(year)).map { (year, $0) } },
+                          uniquingKeysWith: { _, new in new })
+    }
+}

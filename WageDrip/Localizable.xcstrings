@@ -1565,6 +1565,26 @@
           }
         }
       }
+    },
+    "在 iPhone 上打开窝囊费以同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open WageDrip on your iPhone to sync"
+          }
+        }
+      }
+    },
+    "请先在 iPhone 上完成设置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish setup on your iPhone first"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

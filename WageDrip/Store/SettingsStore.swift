@@ -38,6 +38,7 @@ final class SettingsStore {
             await MilestoneNotifier.reschedule(settings: self.stored, rate: self.rate.rate)
             #if os(iOS)
             await LiveActivityController.shared.settingsChanged()
+            WatchSync.shared.push()
             #endif
         }
     }
@@ -71,6 +72,9 @@ final class SettingsStore {
             engineCache = nil
             WidgetCenter.shared.reloadAllTimelines()
         }
+        #if os(iOS)
+        WatchSync.shared.push()
+        #endif
         guard stored.onboardingDone else { return }
         await MilestoneNotifier.reschedule(settings: stored, rate: rate.rate)
         #if os(iOS)

@@ -4,6 +4,7 @@ options:
   deploymentTarget:
     iOS: "27.0"
     macOS: "27.0"
+    watchOS: "27.0"
   createIntermediateGroups: true
   developmentLanguage: zh-Hans
 packages:
@@ -30,6 +31,9 @@ targets:
     dependencies:
       - package: WageDripCore
       - target: WageDripWidgets
+      # The watch app travels inside the iPhone app; the Mac build has no use for it.
+      - target: WageDripWatch
+        platformFilter: iOS
     info:
       path: WageDrip/Info.plist
       properties:
@@ -93,6 +97,35 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WageDripWidgets/WageDripWidgets.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": WageDripWidgets/WageDripWidgets-macOS.entitlements
         ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
+  WageDripWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - WageDripWatch
+      - Shared
+      - WageDrip/Assets.xcassets
+      - WageDrip/Localizable.xcstrings
+      - WageDrip/InfoPlist.xcstrings
+    dependencies:
+      - package: WageDripCore
+    info:
+      path: WageDripWatch/Info.plist
+      properties:
+        CFBundleDisplayName: 窝囊费
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.andyuneducated.wagedrip
+        # Tapping the Live Activity in the watch's Smart Stack opens this app.
+        WKSupportsLiveActivityLaunchAttributeTypes:
+          - WageActivityAttributes
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.andyuneducated.wagedrip.watchkitapp
+        PRODUCT_NAME: WageDripWatch
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SKIP_INSTALL: YES
 schemes:
   WageDrip:

@@ -11,6 +11,9 @@ struct WageDripApp: App {
     init() {
         let store = SettingsStore()
         _store = State(initialValue: store)
+        #if os(iOS)
+        WatchSync.shared.start()
+        #endif
         #if os(macOS)
         // Started here rather than from a view: the menu bar item must tick even when no
         // window has been opened.

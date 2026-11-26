@@ -3,11 +3,21 @@ import SwiftUI
 /// Thermal-receipt look: paper, ink, monospaced type, dashed rules. Colors live in the asset
 /// catalog with separate light ("day receipt") and dark ("night receipt") values.
 enum ReceiptTheme {
+    #if os(watchOS)
+    // The watch has no light appearance and its asset catalogs ignore the dark variants, so the
+    // night receipt values are repeated here.
+    static let paper = Color(red: 0x1C / 255, green: 0x1B / 255, blue: 0x18 / 255)
+    static let ink = Color(red: 0xE8 / 255, green: 0xE2 / 255, blue: 0xD0 / 255)
+    static let inkSecondary = Color(red: 0xA8 / 255, green: 0xA3 / 255, blue: 0x96 / 255)
+    static let dash = Color(red: 0x6B / 255, green: 0x67 / 255, blue: 0x5E / 255)
+    static let desk = Color(red: 0x0E / 255, green: 0x0D / 255, blue: 0x0C / 255)
+    #else
     static let paper = Color("Paper")
     static let ink = Color("Ink")
     static let inkSecondary = Color("InkSecondary")
     static let dash = Color("Dash")
     static let desk = Color("Desk")
+    #endif
 
     static let maxWidth: CGFloat = 420
 

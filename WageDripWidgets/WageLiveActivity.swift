@@ -71,10 +71,13 @@ private struct WatchCard: View {
                 if let end = state.countdownEnd, end > state.asOf {
                     HStack(spacing: 4) {
                         Text("距下班")
+                            .lineLimit(1)
+                            .fixedSize()
                         Text(timerInterval: state.asOf...end, countsDown: true)
                             .monospacedDigit()
                     }
                     .font(.system(.caption2, design: .monospaced))
+                    .minimumScaleFactor(0.7)
                     .opacity(0.7)
                 } else {
                     HStack(spacing: 4) {

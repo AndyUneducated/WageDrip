@@ -332,7 +332,7 @@ First launch goes through a short onboarding: region, pay, working hours; three 
 - A push service so the Live Activity amount updates reliably every minute (requires a paid account).
 - iCloud sync of settings.
 - The icon, screenshots and privacy disclosures needed for the App Store release.
-- Apple Watch.
+- Apple Watch complications and a Smart Stack widget (the watch app itself is described in section 18).
 - In-year raise history, night shifts.
 
 ## 16. Sources
@@ -374,3 +374,39 @@ Findings on project configuration: `project.yml` needs to declare the App Groups
 - Starting a Live Activity must happen in the foreground, so "appears automatically every day" depends on scheduling: each time the app is opened, the next 2 workdays are scheduled. If the app is not opened for more than 2 consecutive workdays, the automatic appearance stops until the next time it is opened.
 - The scheduled start API requires an alert configuration to be attached, so there is one alert sound each day when the Live Activity appears at the start of work.
 - The simulator does not support background refresh tasks (`BGTaskScheduler`); background updates can only be verified on a real device.
+
+## 18. Apple Watch app (added 2026-11-25)
+
+Apple Watch was a non-goal for the first version. It was added after the Live Activity turned out to be mirrored to a paired watch whether the app wants it or not, where it showed a blank app icon and did nothing when tapped.
+
+### 18.1 Scope
+
+- One screen: the status, the headline amount ticking, the other selected periods, the countdown (fixed hours only) and the sign-off. Night receipt colors always, because the watch has no light appearance.
+- No settings on the watch, no network access on the watch, no complications or Smart Stack widget yet.
+- Tapping the mirrored Live Activity opens the watch app (`WKSupportsLiveActivityLaunchAttributeTypes`).
+
+### 18.2 Structure
+
+- `WageDripWatch` is a watchOS app target embedded in the iPhone app (`Watch/WageDripWatch.app`); the Mac build leaves it out. Bundle ID `com.andyuneducated.wagedrip.watchkitapp`.
+- `WageDripCore` builds for watchOS unchanged, so the watch computes amounts with the same engine as every other surface.
+- The watch shares no storage with the phone. The phone sends a `WatchPayload` over WatchConnectivity: the settings, the pay-to-display exchange rate, and any China holiday files downloaded since the app was built.
+  - The phone replaces its application context whenever settings change and each time the app comes to the foreground. Only the latest state matters, so nothing is queued.
+  - A watch that has never received anything asks the phone with a message; this also wakes the phone app in the background.
+  - The watch keeps the last payload in its own defaults and works from that when the phone is out of reach.
+- Until the first payload arrives the watch asks the owner to open the iPhone app; if onboarding is not finished it asks for that instead.
+
+### 18.3 Simulator results (2026-11-25, iPhone 17 paired with Apple Watch Ultra 4, watchOS 27.2)
+
+| Checked | Result |
+|---|---|
+| App icon in the watch's app grid | Shown |
+| App icon at the top of the watch face while the Live Activity runs | Shown |
+| Live Activity card in the Smart Stack | Shown, using the `.small` layout |
+| Tapping the Live Activity indicator on the watch face | Opens the watch app |
+| First sync after installing | Amounts on the watch match the phone |
+| Changing a setting on the phone (turning on a 22% deduction) | The watch showed the reduced amounts within a few seconds |
+| Builds | iOS simulator, iOS device with a free team, and macOS all build; the Mac app contains no watch app |
+
+Not verified: anything on a physical watch; whether the icon and tap problems seen on the owner's watch are gone there; behaviour when the phone is out of range; installing over a free 7-day profile. Tapping the Live Activity card inside the Smart Stack (rather than the indicator on the face) once showed the system's "Open on iPhone" sheet, during a run where the watch was displaying a stale activity; this was not reproduced cleanly either way.
+
+Two things learned along the way: watchOS asset catalogs ignore the dark variants of colors, so the watch's colors are set in code; and XcodeGen embeds the watch app only when the dependency carries `platformFilter: iOS` (`platforms: [iOS]` silently drops it).
