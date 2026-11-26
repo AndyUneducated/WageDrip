@@ -410,3 +410,15 @@ Apple Watch was a non-goal for the first version. It was added after the Live Ac
 Not verified: anything on a physical watch; whether the icon and tap problems seen on the owner's watch are gone there; behaviour when the phone is out of range; installing over a free 7-day profile. Tapping the Live Activity card inside the Smart Stack (rather than the indicator on the face) once showed the system's "Open on iPhone" sheet, during a run where the watch was displaying a stale activity; this was not reproduced cleanly either way.
 
 Two things learned along the way: watchOS asset catalogs ignore the dark variants of colors, so the watch's colors are set in code; and XcodeGen embeds the watch app only when the dependency carries `platformFilter: iOS` (`platforms: [iOS]` silently drops it).
+
+## 19. App icon colorways (added 2026-11-26)
+
+iOS draws Home Screen icons in four styles: Default, Dark, Tinted and Clear. The icon set now carries three images, all drawn by `tools/make-icon.swift` from the same shapes:
+
+| Image | Used for | Design |
+|---|---|---|
+| `icon-1024.png` | Default; also macOS and watchOS | Day receipt on a dark desk (unchanged) |
+| `icon-1024-dark.png` | Dark | Night receipt: dark paper, pale ink. Transparent background, so the system's dark background shows through |
+| `icon-1024-tinted.png` | Tinted and Clear | Grayscale on black. Brightness becomes tint strength: the drop is white, the paper a dark gray |
+
+Checked on an iPhone simulator (iOS 27.2) by switching the Home Screen through all four styles; each showed the intended image. Not checked on a device. macOS and watchOS keep the default image only. An Icon Composer layered icon, which would give the Liquid Glass styles real depth, is a possible later step.

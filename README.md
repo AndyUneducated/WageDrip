@@ -116,6 +116,20 @@ Toolbar buttons:
 - With **Show automatically at work** on, it appears by itself at your start time on workdays (with one alert sound) and settles when work ends.
 - The Dynamic Island shows a drop icon and today's amount.
 
+### App icon
+
+<p>
+  <img src="docs/images/icon.png" width="15%" alt="Default icon">
+  <img src="docs/images/icon-dark.png" width="15%" alt="Dark icon">
+  <img src="docs/images/icon-tinted.png" width="15%" alt="Tinted icon">
+</p>
+
+| Home Screen icon style | What the app supplies |
+|---|---|
+| Default | Day receipt on a dark desk |
+| Dark | Night receipt with pale ink, on the system's dark background |
+| Tinted and Clear | A grayscale version; the drop is brightest, so it takes the tint most strongly |
+
 ### Apple Watch
 
 <p>
@@ -344,7 +358,7 @@ Tap the Version row in Settings five times to reveal a Diagnostics page. It logs
 | `project.yml` | XcodeGen project definition |
 | `docs/specs` | Design spec, including on-device measurements |
 | `docs/plans` | Implementation plan |
-| `tools/make-icon.swift` | Script that draws the app icon |
+| `tools/make-icon.swift` | Script that draws the app icon in its default, dark and tinted colorways |
 
 ## Known limits
 
