@@ -330,6 +330,7 @@ Tap the Version row in Settings five times to reveal a Diagnostics page. It logs
 - **The Live Activity amount is not live.** It refreshes when the app gets to run. Use a widget for a figure accurate to the minute.
 - **Automatic appearance needs an occasional launch.** Each time you open the app it schedules the next 2 workdays. Go more than 2 workdays without opening it and the Live Activity stops appearing until you do.
 - **Flexible hours and the 8-hour cap.** iOS ends a Live Activity after 8 hours, which is shorter than a start-to-midnight day.
+- **Apple Watch.** A paired watch mirrors the Live Activity in its Smart Stack with a compact layout. There is no watch app, and on a build installed from Xcode the watch shows a blank app icon and does nothing when tapped; the cause is not established. To hide it, turn WageDrip off under Settings › Smart Stack › Live Activities on the watch.
 - **Free Apple accounts.** Apps expire after 7 days and a device holds at most 3 such apps. No iCloud, so settings do not sync between devices. No push.
 - **One pay rate per year.** "This year" is projected back from your current pay; mid-year raises are not tracked.
 - **No overnight shifts.** Work must start and end on the same day.
